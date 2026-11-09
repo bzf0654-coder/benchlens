@@ -129,6 +129,25 @@ pub fn percentile(values : Array[Double], p : Double) -> Double {
   sorted[lo] * (1.0 - frac) + sorted[hi] * frac
 }
 
+/// Count samples outside [q1 - 1.5*IQR, q3 + 1.5*IQR] (Tukey fences).
+pub fn count_outliers(values : Array[Double]) -> Int {
+  if values.length() == 0 {
+    return 0
+  }
+  let q1 = percentile(values, 25.0)
+  let q3 = percentile(values, 75.0)
+  let iqr = q3 - q1
+  let lo = q1 - 1.5 * iqr
+  let hi = q3 + 1.5 * iqr
+  let mut count = 0
+  for v in values {
+    if v < lo || v > hi {
+      count = count + 1
+    }
+  }
+  count
+}
+
 /// Smallest value; aborts on empty input.
 pub fn minimum(values : Array[Double]) -> Double {
   if values.length() == 0 {
@@ -204,6 +223,7 @@ pub struct MetricStats {
   p99 : Double
   lowest : Double
   highest : Double
+  outliers : Int
 }
 pub extend MetricStats with @debug.Debug::{to_repr}
 
@@ -246,6 +266,7 @@ pub fn aggregate(records : Array[BenchRecord]) -> Array[MetricStats] {
         p99: percentile(g.values, 99.0),
         lowest: minimum(g.values),
         highest: maximum(g.values),
+        outliers: count_outliers(g.values),
       },
     )
   }
@@ -475,10 +496,16 @@ pub fn render_stats_table(stats : Array[MetricStats]) -> String {
   )
   buf.write_string("|---|---|---:|---:|---:|---:|---:|---:|---|\n")
   for s in stats {
-    let note = if s.n < 30 {
+    let mut note = if s.n < 30 {
       "small sample (n<30)"
     } else {
       ""
+    }
+    if s.outliers > 0 {
+      if note != "" {
+        note = note + "; "
+      }
+      note = note + s.outliers.to_string() + " outlier(s)"
     }
     buf.write_string(
       "| " + s.run + " | " + s.metric + " | " + s.n.to_string() + " | " +

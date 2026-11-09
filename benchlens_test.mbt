@@ -127,3 +127,16 @@ test "format_fixed rounds and pads correctly" {
   inspect(@benchlens.format_fixed(0.5, 0), content="1")
   inspect(@benchlens.format_fixed(1.25, 1), content="1.3")
 }
+
+///|
+test "aggregate flags IQR outliers" {
+  let csv = "run,metric,value\nx,lat,1\nx,lat,2\nx,lat,3\nx,lat,4\nx,lat,100\n"
+  let stats = @benchlens.aggregate(@benchlens.load_records(csv))
+  inspect(stats.length(), content="1")
+  inspect(stats[0].outliers, content="1")
+  let clean = "run,metric,value\nx,lat,1\nx,lat,2\nx,lat,3\nx,lat,4\nx,lat,5\n"
+  let clean_stats = @benchlens.aggregate(@benchlens.load_records(clean))
+  inspect(clean_stats[0].outliers, content="0")
+  let table = @benchlens.render_stats_table(stats)
+  inspect(table.contains("1 outlier(s)"), content="true")
+}

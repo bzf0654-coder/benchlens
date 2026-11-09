@@ -10,6 +10,8 @@ pub fn aggregate(Array[BenchRecord]) -> Array[MetricStats]
 
 pub fn compare(Array[BenchRecord], String, String) -> Array[MetricDiff]
 
+pub fn count_outliers(Array[Double]) -> Int32
+
 pub fn format_fixed(Double, Int32) -> String
 
 pub fn json_as_array(JsonValue) -> Array[JsonValue]?
@@ -97,6 +99,7 @@ pub struct MetricStats {
   p99 : Double
   lowest : Double
   highest : Double
+  outliers : Int32
 }
 pub fn MetricStats::to_repr(Self) -> @debug.Repr
 
