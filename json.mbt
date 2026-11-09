@@ -348,3 +348,78 @@ pub fn json_get_double(v : JsonValue, key : String) -> Double? {
     _ => None
   }
 }
+
+///|
+// ---------- serialization ----------
+
+fn hex_digit(v : Int) -> Char {
+  let digits = "0123456789abcdef"
+  match digits.get_char(v) {
+    Some(c) => c
+    None => '0'
+  }
+}
+
+fn write_escaped_string(buf : StringBuilder, s : String) -> Unit {
+  buf.write_char('"')
+  for _, ch in s {
+    match ch {
+      '"' => buf.write_string("\\\"")
+      '\\' => buf.write_string("\\\\")
+      '\n' => buf.write_string("\\n")
+      '\r' => buf.write_string("\\r")
+      '\t' => buf.write_string("\\t")
+      c => {
+        if c.to_int() < 0x20 {
+          buf.write_string("\\u00")
+          let code = c.to_int()
+          buf.write_char(hex_digit(code / 16))
+          buf.write_char(hex_digit(code % 16))
+        } else {
+          buf.write_char(c)
+        }
+      }
+    }
+  }
+  buf.write_char('"')
+}
+
+fn write_json(v : JsonValue, buf : StringBuilder) -> Unit {
+  match v {
+    JNull => buf.write_string("null")
+    JBool(true) => buf.write_string("true")
+    JBool(false) => buf.write_string("false")
+    JNumber(x) => buf.write_string(x.to_string())
+    JString(s) => write_escaped_string(buf, s)
+    JArray(items) => {
+      buf.write_char('[')
+      for i, item in items {
+        if i > 0 {
+          buf.write_char(',')
+        }
+        write_json(item, buf)
+      }
+      buf.write_char(']')
+    }
+    JObject(fields) => {
+      buf.write_char('{')
+      for i, field in fields {
+        if i > 0 {
+          buf.write_char(',')
+        }
+        write_escaped_string(buf, field.0)
+        buf.write_char(':')
+        write_json(field.1, buf)
+      }
+      buf.write_char('}')
+    }
+  }
+}
+
+/// Serialize a `JsonValue` back to compact JSON text.
+/// Together with `json_parse` this gives full round-trip capability.
+pub fn json_serialize(v : JsonValue) -> String {
+  let buf = StringBuilder()
+  write_json(v, buf)
+  buf.to_string()
+}

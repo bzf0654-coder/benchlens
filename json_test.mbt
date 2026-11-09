@@ -93,3 +93,20 @@ test "json accessors" {
     None => inspect("no field e", content="REACHED")
   }
 }
+
+///|
+test "json_serialize round-trips documents" {
+  let doc = "{\"backend\":\"vllm \\\"fast\\\"\",\"mean\":42.5,\"ttfts\":[1.0,2.5],\"nested\":{\"ok\":true,\"x\":null}}"
+  let once = @benchlens.json_parse(doc)
+  let twice = @benchlens.json_parse(@benchlens.json_serialize(once))
+  inspect(
+    @debug.to_string(twice) == @debug.to_string(once),
+    content="true",
+  )
+  inspect(
+    @benchlens.json_serialize(@benchlens.json_parse("[1,2.5,\"a\\nb\",true,null]")),
+    content=(
+      #|[1,2.5,"a\nb",true,null]
+    ),
+  )
+}
