@@ -42,6 +42,8 @@ pub fn render_markdown_table(Array[MetricDiff], String, String) -> String
 
 pub fn render_run_matrix(Array[BenchRecord]) -> String
 
+pub fn render_stats_table(Array[MetricStats]) -> String
+
 pub fn sorted_ascending(Array[Double]) -> Array[Double]
 
 pub fn split_by(String, Char) -> Array[String]

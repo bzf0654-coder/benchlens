@@ -93,3 +93,22 @@ test "render_run_matrix covers all runs with deltas and gaps" {
   inspect(table.contains("| tpot | 10 | 8 (-20%) | 9 (-10%) |"), content="true")
   inspect(table.contains("| tps | 100 | 120 (+20%) | — |"), content="true")
 }
+
+///|
+test "render_stats_table flags small samples" {
+  let csv = "run,metric,value\ntiny,tps,10\ntiny,tps,12\n"
+  let small = @benchlens.render_stats_table(
+    @benchlens.aggregate(@benchlens.load_records(csv)),
+  )
+  inspect(small.contains("small sample (n<30)"), content="true")
+  let buf = StringBuilder()
+  buf.write_string("run,metric,value\n")
+  for i in 0..<30 {
+    buf.write_string("big,tps," + i.to_string() + ".0\n")
+  }
+  let big = @benchlens.render_stats_table(
+    @benchlens.aggregate(@benchlens.load_records(buf.to_string())),
+  )
+  inspect(big.contains("big | tps | 30 |"), content="true")
+  inspect(big.contains("small sample"), content="false")
+}

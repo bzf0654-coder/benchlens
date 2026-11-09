@@ -461,3 +461,31 @@ pub fn render_run_matrix(records : Array[BenchRecord]) -> String {
   }
   buf.to_string()
 }
+
+///|
+// ---------- per-run statistics table ----------
+
+/// Render aggregated statistics as a Markdown table.
+/// Groups with fewer than 30 samples are flagged so that small-sample
+/// conclusions are visible at a glance.
+pub fn render_stats_table(stats : Array[MetricStats]) -> String {
+  let buf = StringBuilder()
+  buf.write_string(
+    "| run | metric | n | avg | p50 | p99 | min | max | note |\n",
+  )
+  buf.write_string("|---|---|---:|---:|---:|---:|---:|---:|---|\n")
+  for s in stats {
+    let note = if s.n < 30 {
+      "small sample (n<30)"
+    } else {
+      ""
+    }
+    buf.write_string(
+      "| " + s.run + " | " + s.metric + " | " + s.n.to_string() + " | " +
+      s.avg.to_string() + " | " + s.p50.to_string() + " | " +
+      s.p99.to_string() + " | " + s.lowest.to_string() + " | " +
+      s.highest.to_string() + " | " + note + " |\n",
+    )
+  }
+  buf.to_string()
+}
