@@ -20,9 +20,9 @@ benchlens 把这件事变成一条流水线：**读入 CSV 长表或 vLLM/SGLang
 
 ## 当前功能
 
-- **CSV 长表解析**：`run,metric,value` 三列，自动跳过表头、空行、脏数据
-- **JSON 导入**：手写递归下降 JSON 解析器（含转义、`\uXXXX` 与代理对），直接读 vLLM/SGLang `benchmark_serving` 结果——顶层标量字段成为单样本指标，数值数组（`ttfts`/`itls`）成为逐请求样本，可算真实分位数
-- **分组统计**：按 (run, metric) 分组计算 n / avg / p50 / p99 / min / max，n<30 自动标记小样本
+- **CSV 解析（双格式自动识别）**：长表 `run,metric,value` 与宽表（表头即指标名，电子表格导出形态）自动分流，均跳过脏数据
+- **JSON 导入**：手写递归下降 JSON 解析器（含转义、`\uXXXX` 与代理对）与对称的序列化器（可往返），直接读 vLLM/SGLang `benchmark_serving` 结果——顶层标量字段成为单样本指标，数值数组（`ttfts`/`itls`）成为逐请求样本，可算真实分位数
+- **分组统计**：按 (run, metric) 分组计算 n / avg / p50 / p99 / min / max，n<30 自动标记小样本，IQR（Tukey 法）自动检测并标注离群样本
 - **双 run 对比**：按指标名对齐，输出相对变化百分比
 - **多 run 矩阵**：全部 run × 全部指标一张表，逐列带相对首个 run 的 delta，缺失格以 — 标记
 - **定点数字格式化**：手写 `format_fixed`，报告里不再是 `42.800000000000004`
@@ -32,7 +32,7 @@ benchlens 把这件事变成一条流水线：**读入 CSV 长表或 vLLM/SGLang
 
 ```bash
 moon run cmd/main   # 完整演示：CSV 流程 + JSON 导入 + 多 run 矩阵
-moon test           # 16 个行为测试
+moon test           # 19 个行为测试
 ```
 
 输出示例（节选）：
@@ -71,7 +71,7 @@ moon test           # 16 个行为测试
 - [x] 统计严谨性：小样本警告（n<30 标记）
 - [ ] CLI 参数化：`benchlens compare --base baseline --cand tuned results.csv`
 - [ ] 网页版（wasm 后端）：拖文件出报告，零安装
-- [ ] 离群值标注（IQR / MAD）
+- [x] 离群值标注（IQR / Tukey fences）
 
 ## 参赛声明
 
