@@ -10,6 +10,8 @@ pub fn aggregate(Array[BenchRecord]) -> Array[MetricStats]
 
 pub fn compare(Array[BenchRecord], String, String) -> Array[MetricDiff]
 
+pub fn format_fixed(Double, Int32) -> String
+
 pub fn json_as_array(JsonValue) -> Array[JsonValue]?
 
 pub fn json_as_bool(JsonValue) -> Bool?

@@ -90,8 +90,8 @@ test "render_run_matrix covers all runs with deltas and gaps" {
   let csv = "run,metric,value\nold,tpot,10\nnew,tpot,8\nnew2,tpot,9\nold,tps,100\nnew,tps,120\n"
   let table = @benchlens.render_run_matrix(@benchlens.load_records(csv))
   inspect(table.contains("| metric | old | new | new2 |"), content="true")
-  inspect(table.contains("| tpot | 10 | 8 (-20%) | 9 (-10%) |"), content="true")
-  inspect(table.contains("| tps | 100 | 120 (+20%) | — |"), content="true")
+  inspect(table.contains("| tpot | 10.00 | 8.00 (-20.0%) | 9.00 (-10.0%) |"), content="true")
+  inspect(table.contains("| tps | 100.00 | 120.00 (+20.0%) | — |"), content="true")
 }
 
 ///|
@@ -111,4 +111,19 @@ test "render_stats_table flags small samples" {
   )
   inspect(big.contains("big | tps | 30 |"), content="true")
   inspect(big.contains("small sample"), content="false")
+}
+
+///|
+test "format_fixed rounds and pads correctly" {
+  inspect(@benchlens.format_fixed(42.801, 2), content=(
+    #|42.80
+  ))
+  inspect(@benchlens.format_fixed(3.14159, 2), content="3.14")
+  inspect(@benchlens.format_fixed(3.145, 1), content="3.1")
+  inspect(@benchlens.format_fixed(-2.675, 2), content=(
+    #|-2.68
+  ))
+  inspect(@benchlens.format_fixed(100.0, 1), content="100.0")
+  inspect(@benchlens.format_fixed(0.5, 0), content="1")
+  inspect(@benchlens.format_fixed(1.25, 1), content="1.3")
 }

@@ -309,9 +309,9 @@ pub fn compare(
 
 fn fmt_delta(pct : Double) -> String {
   if pct > 0.0 {
-    "+" + pct.to_string() + "%"
+    "+" + format_fixed(pct, 1) + "%"
   } else if pct < 0.0 {
-    pct.to_string() + "%"
+    format_fixed(pct, 1) + "%"
   } else {
     "0%"
   }
@@ -330,8 +330,8 @@ pub fn render_markdown_table(
   buf.write_string("|---|---:|---:|---:|\n")
   for d in diffs {
     buf.write_string(
-      "| " + d.metric + " | " + d.base_avg.to_string() + " | " +
-      d.cand_avg.to_string() + " | " + fmt_delta(d.delta_pct) + " |\n",
+      "| " + d.metric + " | " + format_fixed(d.base_avg, 2) + " | " +
+      format_fixed(d.cand_avg, 2) + " | " + fmt_delta(d.delta_pct) + " |\n",
     )
   }
   buf.to_string()
@@ -440,7 +440,7 @@ pub fn render_run_matrix(records : Array[BenchRecord]) -> String {
     for i, r in runs {
       match avg_lookup(stats, r, m) {
         Some(v) => {
-          let cell = v.to_string()
+          let cell = format_fixed(v, 2)
           match (i, base) {
             (0, _) => buf.write_string(" " + cell + " |")
             (_, Some(b)) => {
@@ -482,10 +482,47 @@ pub fn render_stats_table(stats : Array[MetricStats]) -> String {
     }
     buf.write_string(
       "| " + s.run + " | " + s.metric + " | " + s.n.to_string() + " | " +
-      s.avg.to_string() + " | " + s.p50.to_string() + " | " +
-      s.p99.to_string() + " | " + s.lowest.to_string() + " | " +
-      s.highest.to_string() + " | " + note + " |\n",
+      format_fixed(s.avg, 2) + " | " + format_fixed(s.p50, 2) + " | " +
+      format_fixed(s.p99, 2) + " | " + format_fixed(s.lowest, 2) + " | " +
+      format_fixed(s.highest, 2) + " | " + note + " |\n",
     )
   }
   buf.to_string()
+}
+
+///|
+// ---------- number formatting ----------
+
+fn pow10(n : Int) -> Double {
+  let mut r = 1.0
+  for _ in 0..<n {
+    r = r * 10.0
+  }
+  r
+}
+
+/// Format a double with a fixed number of digits after the decimal point,
+/// rounding half away from zero. Hand-rolled so the library stays free of
+/// any dependency beyond moonbitlang/core.
+pub fn format_fixed(value : Double, digits : Int) -> String {
+  let neg = value < 0.0
+  let abs = if neg { -value } else { value }
+  let scale = pow10(digits)
+  let scaled = (abs * scale + 0.5).floor()
+  let int_part = (scaled / scale).floor().to_int()
+  let frac_part = (scaled - int_part.to_double() * scale).to_int()
+  let frac_str = frac_part.to_string()
+  let mut padded = frac_str
+  while padded.length() < digits {
+    padded = "0" + padded
+  }
+  let mut out = int_part.to_string()
+  if digits > 0 {
+    out = out + "." + padded
+  }
+  if neg {
+    "-" + out
+  } else {
+    out
+  }
 }
