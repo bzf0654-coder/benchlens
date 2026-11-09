@@ -51,3 +51,45 @@ test "json_parse handles arrays and objects with nesting" {
   inspect(@benchlens.json_parse("[]").to_repr(), content="JArray([])")
   inspect(@benchlens.json_parse("{}").to_repr(), content="JObject([])")
 }
+
+///|
+test "json accessors" {
+  let doc = @benchlens.json_parse("{\"a\":1.5,\"b\":\"x\",\"c\":[1,2],\"d\":true,\"e\":null}")
+  inspect(@debug.to_string(@benchlens.json_get(doc, "missing")), content=(
+    #|None
+  ))
+  match @benchlens.json_get(doc, "a") {
+    Some(v) => inspect(@debug.to_string(@benchlens.json_as_double(v)), content=(
+      #|Some(1.5)
+    ))
+    None => inspect("no field a", content="REACHED")
+  }
+  inspect(@debug.to_string(@benchlens.json_get_double(doc, "a")), content=(
+    #|Some(1.5)
+  ))
+  match @benchlens.json_get(doc, "b") {
+    Some(v) => inspect(@debug.to_string(@benchlens.json_as_string(v)), content=(
+      #|Some("x")
+
+    ))
+    None => inspect("no field b", content="REACHED")
+  }
+  match @benchlens.json_get(doc, "c") {
+    Some(v) => inspect(@debug.to_string(@benchlens.json_as_array(v)), content=(
+      #|Some([JNumber(1), JNumber(2)])
+    ))
+    None => inspect("no field c", content="REACHED")
+  }
+  match @benchlens.json_get(doc, "d") {
+    Some(v) => inspect(@debug.to_string(@benchlens.json_as_bool(v)), content=(
+      #|Some(true)
+    ))
+    None => inspect("no field d", content="REACHED")
+  }
+  match @benchlens.json_get(doc, "e") {
+    Some(v) => inspect(@debug.to_string(@benchlens.json_as_double(v)), content=(
+      #|None
+    ))
+    None => inspect("no field e", content="REACHED")
+  }
+}

@@ -290,3 +290,61 @@ fn parse_value(p : JsonParser) -> JsonValue {
     }
   }
 }
+
+///|
+// ---------- accessors ----------
+
+/// Look up a key in a JSON object; None for non-objects or missing keys.
+pub fn json_get(v : JsonValue, key : String) -> JsonValue? {
+  match v {
+    JObject(fields) => {
+      for f in fields {
+        if f.0 == key {
+          return Some(f.1)
+        }
+      }
+      None
+    }
+    _ => None
+  }
+}
+
+/// Cast to Double if this value is a number.
+pub fn json_as_double(v : JsonValue) -> Double? {
+  match v {
+    JNumber(x) => Some(x)
+    _ => None
+  }
+}
+
+/// Cast to String if this value is a string.
+pub fn json_as_string(v : JsonValue) -> String? {
+  match v {
+    JString(s) => Some(s)
+    _ => None
+  }
+}
+
+/// Borrow the items if this value is an array.
+pub fn json_as_array(v : JsonValue) -> Array[JsonValue]? {
+  match v {
+    JArray(items) => Some(items)
+    _ => None
+  }
+}
+
+/// Cast to Bool if this value is a boolean.
+pub fn json_as_bool(v : JsonValue) -> Bool? {
+  match v {
+    JBool(b) => Some(b)
+    _ => None
+  }
+}
+
+/// Shorthand: object key lookup cast to Double.
+pub fn json_get_double(v : JsonValue, key : String) -> Double? {
+  match json_get(v, key) {
+    Some(JNumber(x)) => Some(x)
+    _ => None
+  }
+}
