@@ -65,3 +65,22 @@ test "render_markdown_table produces a table" {
   inspect(table.contains("tps"), content="true")
   inspect(table.contains("+100"), content="true")
 }
+
+///|
+test "load_json_run extracts scalars and numeric arrays" {
+  let doc = "{\"backend\":\"vllm\",\"mean_ttft_ms\":42.0,\"request_throughput\":12.5,\"ttfts\":[10.0,20.0,60.0],\"labels\":[\"a\",\"b\"],\"ok\":true,\"empty\":[]}"
+  let records = @benchlens.load_json_run(doc, "vllm-a100")
+  inspect(records.length(), content="5")
+  let stats = @benchlens.aggregate(records)
+  inspect(stats.length(), content="3")
+  let mut found = false
+  for s in stats {
+    if s.metric == "ttfts" {
+      found = true
+      inspect(s.n, content="3")
+      inspect(s.avg, content="30")
+      inspect(s.p50, content="20")
+    }
+  }
+  inspect(found, content="true")
+}

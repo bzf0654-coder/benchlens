@@ -24,6 +24,8 @@ pub fn json_get_double(JsonValue, String) -> Double?
 
 pub fn json_parse(String) -> JsonValue
 
+pub fn load_json_run(String, String) -> Array[BenchRecord]
+
 pub fn load_records(String) -> Array[BenchRecord]
 
 pub fn maximum(Array[Double]) -> Double

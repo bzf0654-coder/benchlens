@@ -336,3 +336,47 @@ pub fn render_markdown_table(
   }
   buf.to_string()
 }
+
+///|
+// ---------- JSON benchmark loading ----------
+
+/// Load a benchmark_serving-style JSON report (vLLM/SGLang) as records
+/// under the given run name. Top-level numeric fields become single-sample
+/// metrics; top-level arrays of numbers become per-sample metrics
+/// (e.g. "ttfts" / "itls"), so percentiles can be computed from raw data.
+/// Strings, booleans and mixed arrays are ignored.
+pub fn load_json_run(content : String, run : String) -> Array[BenchRecord] {
+  let records : Array[BenchRecord] = []
+  match json_parse(content) {
+    JObject(fields) =>
+      for field in fields {
+        let key = field.0
+        match field.1 {
+          JNumber(x) => records.push({ run, metric: key, value: x })
+          JArray(items) => {
+            let mut numeric = items.length() > 0
+            for item in items {
+              match item {
+                JNumber(_) => continue
+                _ => {
+                  numeric = false
+                  break
+                }
+              }
+            }
+            if numeric {
+              for item in items {
+                match item {
+                  JNumber(x) => records.push({ run, metric: key, value: x })
+                  _ => ()
+                }
+              }
+            }
+          }
+          _ => ()
+        }
+      }
+    _ => ()
+  }
+  records
+}
