@@ -380,3 +380,84 @@ pub fn load_json_run(content : String, run : String) -> Array[BenchRecord] {
   }
   records
 }
+
+///|
+// ---------- multi-run matrix ----------
+
+fn contains_str(arr : Array[String], x : String) -> Bool {
+  for item in arr {
+    if item == x {
+      return true
+    }
+  }
+  false
+}
+
+fn avg_lookup(
+  stats : Array[MetricStats],
+  run : String,
+  metric : String
+) -> Double? {
+  for s in stats {
+    if s.run == run && s.metric == metric {
+      return Some(s.avg)
+    }
+  }
+  None
+}
+
+/// Render every run x metric as a Markdown matrix.
+/// Columns are runs in first-seen order; every run after the first also
+/// shows a delta percentage relative to the first run. Cells for metrics
+/// missing in a run render as an em dash.
+pub fn render_run_matrix(records : Array[BenchRecord]) -> String {
+  let stats = aggregate(records)
+  let runs : Array[String] = []
+  for s in stats {
+    if !contains_str(runs, s.run) {
+      runs.push(s.run)
+    }
+  }
+  let metrics : Array[String] = []
+  for s in stats {
+    if !contains_str(metrics, s.metric) {
+      metrics.push(s.metric)
+    }
+  }
+  let buf = StringBuilder()
+  buf.write_string("| metric |")
+  for r in runs {
+    buf.write_string(" " + r + " |")
+  }
+  buf.write_string("\n|---|")
+  for _ in runs {
+    buf.write_string("---:|")
+  }
+  buf.write_string("\n")
+  for m in metrics {
+    buf.write_string("| " + m + " |")
+    let base = avg_lookup(stats, runs[0], m)
+    for i, r in runs {
+      match avg_lookup(stats, r, m) {
+        Some(v) => {
+          let cell = v.to_string()
+          match (i, base) {
+            (0, _) => buf.write_string(" " + cell + " |")
+            (_, Some(b)) => {
+              let d = if b == 0.0 {
+                0.0
+              } else {
+                (v - b) / b * 100.0
+              }
+              buf.write_string(" " + cell + " (" + fmt_delta(d) + ") |")
+            }
+            (_, None) => buf.write_string(" " + cell + " |")
+          }
+        }
+        None => buf.write_string(" — |")
+      }
+    }
+    buf.write_string("\n")
+  }
+  buf.to_string()
+}

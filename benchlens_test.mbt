@@ -84,3 +84,12 @@ test "load_json_run extracts scalars and numeric arrays" {
   }
   inspect(found, content="true")
 }
+
+///|
+test "render_run_matrix covers all runs with deltas and gaps" {
+  let csv = "run,metric,value\nold,tpot,10\nnew,tpot,8\nnew2,tpot,9\nold,tps,100\nnew,tps,120\n"
+  let table = @benchlens.render_run_matrix(@benchlens.load_records(csv))
+  inspect(table.contains("| metric | old | new | new2 |"), content="true")
+  inspect(table.contains("| tpot | 10 | 8 (-20%) | 9 (-10%) |"), content="true")
+  inspect(table.contains("| tps | 100 | 120 (+20%) | — |"), content="true")
+}
