@@ -37,3 +37,17 @@ test "json_parse handles string escapes" {
     #|JString("😀")
   ))
 }
+
+///|
+test "json_parse handles arrays and objects with nesting" {
+  let doc = "{\"backend\":\"vllm\",\"median_ttft_ms\":12.5,\"ttfts\":[1.0, 2.0, 3.0],\"meta\":{\"shape\":{\"a\":1},\"flags\":[true, false, null]},\"empty_obj\":{},\"empty_arr\":[]}"
+  let repr = @debug.to_string(@benchlens.json_parse(doc))
+  inspect(repr.contains("JObject"), content="true")
+  inspect(repr.contains("JString(\"vllm\")"), content="true")
+  inspect(repr.contains("JNumber(12.5)"), content="true")
+  inspect(repr.contains("JNumber(1)"), content="true")
+  inspect(repr.contains("JBool(true)"), content="true")
+  inspect(repr.contains("JNull"), content="true")
+  inspect(@benchlens.json_parse("[]").to_repr(), content="JArray([])")
+  inspect(@benchlens.json_parse("{}").to_repr(), content="JObject([])")
+}

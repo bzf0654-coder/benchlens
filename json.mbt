@@ -204,10 +204,63 @@ fn parse_string_raw(p : JsonParser) -> String {
 }
 
 ///|
+// ---------- containers ----------
+
+fn parse_array(p : JsonParser) -> JsonValue {
+  expect(p, '[')
+  skip_ws(p)
+  let items : Array[JsonValue] = []
+  if peek(p) == ']' {
+    ignore(advance(p))
+    return JArray(items)
+  }
+  while true {
+    items.push(parse_value(p))
+    skip_ws(p)
+    match advance(p) {
+      ',' => continue
+      ']' => break
+      other => abort(
+        "json: expected ',' or ']' at offset \{p.pos - 1}, got '\{other}'",
+      )
+    }
+  }
+  JArray(items)
+}
+
+fn parse_object(p : JsonParser) -> JsonValue {
+  expect(p, '{')
+  skip_ws(p)
+  let fields : Array[(String, JsonValue)] = []
+  if peek(p) == '}' {
+    ignore(advance(p))
+    return JObject(fields)
+  }
+  while true {
+    skip_ws(p)
+    let key = parse_string_raw(p)
+    skip_ws(p)
+    expect(p, ':')
+    let value = parse_value(p)
+    fields.push((key, value))
+    skip_ws(p)
+    match advance(p) {
+      ',' => continue
+      '}' => break
+      other => abort(
+        "json: expected ',' or '}' at offset \{p.pos - 1}, got '\{other}'",
+      )
+    }
+  }
+  JObject(fields)
+}
+
+///|
 // ---------- entry point ----------
 
 /// Parse a JSON document into a `JsonValue`.
-/// Objects and arrays land in the next commit.
+/// The full grammar is supported: objects, arrays (nested to any depth),
+/// strings with escapes, numbers, booleans and null.
 pub fn json_parse(src : String) -> JsonValue {
   let p = { src, pos: 0 }
   let value = parse_value(p)
@@ -225,6 +278,8 @@ fn parse_value(p : JsonParser) -> JsonValue {
     't' => parse_true(p)
     'f' => parse_false(p)
     '"' => JString(parse_string_raw(p))
+    '[' => parse_array(p)
+    '{' => parse_object(p)
     '-' => parse_number(p)
     c => {
       if c >= '0' && c <= '9' {
