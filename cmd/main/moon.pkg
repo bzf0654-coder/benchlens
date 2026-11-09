@@ -1,0 +1,5 @@
+import {
+  "bzf0654-coder/benchlens" @lib,
+}
+
+pkgtype(kind: "executable")

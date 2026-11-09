@@ -1,0 +1,72 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bzf0654-coder/benchlens"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn aggregate(Array[BenchRecord]) -> Array[MetricStats]
+
+pub fn compare(Array[BenchRecord], String, String) -> Array[MetricDiff]
+
+pub fn load_records(String) -> Array[BenchRecord]
+
+pub fn maximum(Array[Double]) -> Double
+
+pub fn mean(Array[Double]) -> Double
+
+pub fn minimum(Array[Double]) -> Double
+
+pub fn parse_csv(String) -> Array[Array[String]]
+
+pub fn percentile(Array[Double], Double) -> Double
+
+pub fn render_markdown_table(Array[MetricDiff], String, String) -> String
+
+pub fn sorted_ascending(Array[Double]) -> Array[Double]
+
+pub fn split_by(String, Char) -> Array[String]
+
+pub fn split_lines(String) -> Array[String]
+
+pub fn to_double(String) -> Double?
+
+pub fn trim(String) -> String
+
+// Errors
+
+// Types and methods
+#derive(@debug.Debug)
+pub struct BenchRecord {
+  run : String
+  metric : String
+  value : Double
+}
+pub fn BenchRecord::to_repr(Self) -> @debug.Repr
+
+#derive(@debug.Debug)
+pub struct MetricDiff {
+  metric : String
+  base_avg : Double
+  cand_avg : Double
+  delta_pct : Double
+}
+pub fn MetricDiff::to_repr(Self) -> @debug.Repr
+
+#derive(@debug.Debug)
+pub struct MetricStats {
+  run : String
+  metric : String
+  n : Int32
+  avg : Double
+  p50 : Double
+  p99 : Double
+  lowest : Double
+  highest : Double
+}
+pub fn MetricStats::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits
