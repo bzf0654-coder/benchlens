@@ -18,3 +18,22 @@ test "json_parse handles scalars" {
 test "json_parse skips whitespace around the document" {
   inspect(@benchlens.json_parse("  7  ").to_repr(), content="JNumber(7)")
 }
+
+///|
+test "json_parse handles string escapes" {
+  inspect(@benchlens.json_parse("\"a\\nb\"").to_repr(), content=(
+    #|JString("a\nb")
+  ))
+  inspect(@benchlens.json_parse("\"tab\\there\"").to_repr(), content=(
+    #|JString("tab\there")
+  ))
+  inspect(@benchlens.json_parse("\"quote\\\"slash\\\\\"").to_repr(), content=(
+    #|JString("quote\"slash\\")
+  ))
+  inspect(@benchlens.json_parse("\"\\u4e2d\\u6587\"").to_repr(), content=(
+    #|JString("中文")
+  ))
+  inspect(@benchlens.json_parse("\"\\ud83d\\ude00\"").to_repr(), content=(
+    #|JString("😀")
+  ))
+}
