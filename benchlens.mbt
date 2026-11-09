@@ -192,26 +192,6 @@ pub extend BenchRecord with @debug.Debug::{to_repr}
 
 
 
-/// Load records from CSV text with a `run,metric,value` header row.
-/// Rows that are malformed or non-numeric are skipped.
-pub fn load_records(content : String) -> Array[BenchRecord] {
-  let records : Array[BenchRecord] = []
-  let rows = parse_csv(content)
-  for i, row in rows {
-    if i == 0 {
-      continue // header
-    }
-    if row.length() < 3 {
-      continue
-    }
-    match to_double(row[2]) {
-      Some(v) => records.push({ run: trim(row[0]), metric: trim(row[1]), value: v })
-      None => continue
-    }
-  }
-  records
-}
-
 /// Aggregated statistics of one metric within one run.
 #derive(Debug)
 pub struct MetricStats {
@@ -552,4 +532,59 @@ pub fn format_fixed(value : Double, digits : Int) -> String {
   } else {
     out
   }
+}
+
+///|
+// ---------- wide-format CSV ----------
+
+/// Load wide-format rows: header carries metric names, first column is the
+/// run name, e.g. "run,tpot_ms,tpsatps\nbaseline,13.9,1214.9\n...".
+fn load_wide(rows : Array[Array[String]]) -> Array[BenchRecord] {
+  let header = rows[0]
+  let records : Array[BenchRecord] = []
+  let width = header.length()
+  for i, row in rows {
+    if i == 0 {
+      continue
+    }
+    if row.length() < width {
+      continue
+    }
+    for j in 1..<width {
+      match to_double(row[j]) {
+        Some(v) => records.push({ run: trim(row[0]), metric: trim(header[j]), value: v })
+        None => continue
+      }
+    }
+  }
+  records
+}
+
+/// Load records from CSV text. Both common layouts are auto-detected from
+/// the header row:
+/// - long format:  run,metric,value (one measurement per row)
+/// - wide format:  run,<metric-a>,<metric-b>,... (spreadsheet export style)
+pub fn load_records(content : String) -> Array[BenchRecord] {
+  let rows = parse_csv(content)
+  if rows.length() == 0 {
+    return []
+  }
+  let header = rows[0]
+  if header.length() > 2 && trim(header[1]) != "metric" {
+    return load_wide(rows)
+  }
+  let records : Array[BenchRecord] = []
+  for i, row in rows {
+    if i == 0 {
+      continue // header
+    }
+    if row.length() < 3 {
+      continue
+    }
+    match to_double(row[2]) {
+      Some(v) => records.push({ run: trim(row[0]), metric: trim(row[1]), value: v })
+      None => continue
+    }
+  }
+  records
 }

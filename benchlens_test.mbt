@@ -140,3 +140,19 @@ test "aggregate flags IQR outliers" {
   let table = @benchlens.render_stats_table(stats)
   inspect(table.contains("1 outlier(s)"), content="true")
 }
+
+///|
+test "load_records auto-detects wide format" {
+  let csv = "run,tpot_ms,tps\nbaseline,13.9,1214.9\ntuned,11.6,1410.2\n"
+  let records = @benchlens.load_records(csv)
+  inspect(records.length(), content="4")
+  let diffs = @benchlens.compare(records, "baseline", "tuned")
+  inspect(diffs.length(), content="2")
+  let mut tpot_delta = 0.0
+  for d in diffs {
+    if d.metric == "tpot_ms" {
+      tpot_delta = d.delta_pct
+    }
+  }
+  inspect(@benchlens.format_fixed(tpot_delta, 1), content="-16.5")
+}
